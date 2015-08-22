@@ -1,0 +1,20 @@
+languages: node_js
+script: gulp
+install:
+- npm install
+branches:
+  only:
+  - master
+deploy:
+- provider: elasticbeanstalk
+  access-key-id: AKIAJREDHQKX6STJ3I5Q
+  secret-access-key: &1
+    secure: XsgVTZKglf+BpbonB+yLwpgmDJy1Z4AJojlCVVVtfcv+eq0XBqRDSBv8TMppmGKU5TB6k8AO85f3A8FQ32AAsxqZnM8FCGLM7Bo/XO0VYP2nhPjDdK7tdi/zq3VRbPfOzNpGKM5HvmB60JD5QvDctWsgvrkdZd2kPylBAy775uDCMm1wIM68Fs+sl1pee3ioxqOAeT80wMmfIEek9K2YobnoXFpwJmjKlknleQjxKQT7anVhIMOvGsQMkb3j9Exo1qM1AuQbDv34l76CSs7sct/EHsGDUfls4m9hQInKufl3WYPsJQ7JsXPQOtIL+4m2cWSLjrBflipvj2yaYp8AbB3HkKA2J7cnW6zbTF3droOL0+GC0C8mewEYKEEWmLWW9Ki9nQQUhwB91NBPjF+svg4bvjaE1PoFre7Cw9T9h13eRA0DaAdx6JvN+Mum1VWjNXLjspjEXc47SjCQU/mXGWBmnhbRRvsm1jAE9EeAT3/EKLG498/ol2PQzWTWBZXXxF7bFaNlIRpi76E/MsOXdHQ5JcQBZ4lFSM7HFJh2IcqiHQG0HOXEn9Ay0yjPAdW7aiaXRStwNSV+DvMgRIwhcE0aOr2LGewe21ntdd9+AgNUWWaC8OdsFD3onMRM/bxEVnm5YOVxXKBKes8bdWaaMYy2OdSuk7CnaYEsQ/chuA0=
+  skip_cleanup: true
+  region: us-west-2
+  app: monster-maker-api
+  env: monster-maker-api-prod
+  bucket_name: elasticbeanstalk-us-west-2-198078976267
+  on: &2
+    repo: AsmodeusXI/monster-maker
+    branch: master

@@ -1,0 +1,38 @@
+{
+  "name": "monster-maker",
+  "version": "0.1.0",
+  "description": "An API for creating tabletop monsters from various systems.",
+  "main": "./dist/server.js",
+  "scripts": {
+    "test": "mocha ./dist/**/*Spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AsmodeusXI/monster-maker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AsmodeusXI/monster-maker/issues"
+  },
+  "homepage": "https://github.com/AsmodeusXI/monster-maker#readme",
+  "dependencies": {
+    "body-parser": "^1.13.3",
+    "cors": "^2.7.1",
+    "express": "^4.13.3",
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.2.1",
+    "gulp-load-plugins": "^0.10.0",
+    "gulp-mocha": "^2.1.3",
+    "lodash": "^3.10.1",
+    "mongoose": "^4.1.3"
+  },
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "mocha": "^2.2.5",
+    "nodemon": "^1.4.1",
+    "sinon": "^1.16.1",
+    "sinon-as-promised": "^4.0.0",
+    "sinon-chai": "^2.8.0"
+  }
+}
