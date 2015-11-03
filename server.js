@@ -1,5 +1,5 @@
 'use strict';
-
+// just a test!
 module.exports = function() {
     // Express Setup
     const express = require('express');
@@ -23,7 +23,7 @@ module.exports = function() {
 
     // Default route
     app.get('*', function(req,res) {
-        res.send('Hello world!');
+        res.send('This is the basic functionality of Monster Maker!');
     });
 
     // App startup
