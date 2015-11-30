@@ -1,5 +1,5 @@
 'use strict';
-// just a test!
+
 module.exports = function() {
     // Express Setup
     const express = require('express');
@@ -11,9 +11,9 @@ module.exports = function() {
     app.use(cors());
 
     // MongoDB Setup
-    var db = require('./config/db');
+    var config = require('./config/default')[process.env.NODE_ENV || 'local'];
     var mongoose = require('mongoose');
-    mongoose.connect(db.url);
+    mongoose.connect(config.dbUrl);
 
     // File Location Setup
     app.use('/', express.static(__dirname));
@@ -27,6 +27,6 @@ module.exports = function() {
     });
 
     // App startup
-    app.listen('8080');
+    app.listen(config.port);
 }
 module.exports();

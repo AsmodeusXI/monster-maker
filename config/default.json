@@ -1,0 +1,10 @@
+{
+    "local": {
+        "dbUrl": "mongodb://localhost:27017",
+        "port": 8080
+    },
+    "production": {
+        "dbUrl": "mongodb://monsterAdmin:Sp0o0o0okY@ec2-52-32-157-223.us-west-2.compute.amazonaws.com:27017/monster",
+        "port": 8080
+    }
+}
