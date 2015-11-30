@@ -1,6 +1,6 @@
 'use strict';
 
-const Monster = require('./Monster');
+const Monster = require('./Monster').Monster;
 
 const getMonsters = function (req,res) {
     const promise = Monster.find({});
