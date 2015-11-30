@@ -3,7 +3,7 @@
 const MonsterSvc = require('./MonsterSvc');
 
 module.exports = function(app) {
-    app.get('/api/monster', MonsterSvc.getMonsters);
-    app.post('/api/monster', MonsterSvc.postMonsters);
-    app.delete('/api/monster/:monster_id', MonsterSvc.deleteMonster);
+    app.get('/api/monsters', MonsterSvc.getMonsters);
+    app.post('/api/monsters', MonsterSvc.postMonsters);
+    app.delete('/api/monsters/:monster_id', MonsterSvc.deleteMonster);
 }
