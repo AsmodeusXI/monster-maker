@@ -12,7 +12,7 @@ chai.use(sinonChai);
 
 /* INTERNAL DEPENDENCIES */
 var MonsterSvc = require('./MonsterSvc');
-var Monster = require('./Monster');
+var Monster = require('./Monster').Monster;
 
 describe('MonsterSvc', function () {
     describe('#getMonsters', function () {

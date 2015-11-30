@@ -1,11 +1,17 @@
-/* This is how I know it worked */
-
 'use strict';
 
-var mongoose = require('mongoose');
-module.exports = mongoose.model('Monster', {
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+let monsterSchema = new Schema({
     name: String,
     type: String,
     hp: Number,
     exp: Number
 });
+
+let Monster = mongoose.model('monster', monsterSchema);
+
+module.exports = {
+    Monster: Monster
+};
