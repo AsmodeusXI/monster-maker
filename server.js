@@ -23,7 +23,7 @@ module.exports = function() {
 
     // Default route
     app.get('*', function(req,res) {
-        res.send('This is the basic functionality of Monster Maker!');
+        res.send(config.message);
     });
 
     // App startup

@@ -10,7 +10,7 @@ let monsterSchema = new Schema({
     exp: Number
 });
 
-let Monster = mongoose.model('monster', monsterSchema);
+let Monster = mongoose.model('Monster', monsterSchema);
 
 module.exports = {
     Monster: Monster
