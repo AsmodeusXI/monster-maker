@@ -18,4 +18,4 @@ after_success:
 - chmod 600 resources/monster-maker.pem
 - ssh-add resources/monster-maker.pem
 - git remote add live ssh://$USER@$HOST/home/bitnami/apps/monster-maker.git
-- git push live master
+- git push -f live master
