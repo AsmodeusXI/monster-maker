@@ -7,6 +7,6 @@
     "production": {
         "dbUrl": "mongodb://monsterAdmin:Sp0o0o0okY@ec2-52-32-157-223.us-west-2.compute.amazonaws.com:27017/monster",
         "port": 8080,
-        "message": "Say hello world! It's Monster Maker PROD! One more test!"
+        "message": "Say hello world! It's Monster Maker PROD! This is proof that this works!"
     }
 }
