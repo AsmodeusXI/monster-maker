@@ -1,14 +1,18 @@
 'use strict';
 
 const Monster = require('./Monster').Monster;
+const _ = require('lodash');
 
 function createResponder(promiseResponseFromRequest) {
     return function(req, res) {
-        return promiseResponseFromRequest(req).then(
-            function resolve(data) { res.json(data); },
-            function reject(err) { res.send(err); }
-        );
-    }
+        return promiseResponseFromRequest(req)
+            .then(function (data) {
+                res.json(data);
+            })
+            .catch(function (err) {
+                res.send(err);
+            });
+    };
 }
 
 function getMonsters() {
@@ -33,9 +37,10 @@ function updateMonster(req) {
 }
 
 function removeMonster(req) {
-    return Monster.findByIdAndRemove(req.params.monster_id).then(function () {
-        return { message: "Deleted monster with id " + req.params.monster_id };
-    });
+    return Monster.findByIdAndRemove(req.params.monster_id)
+        .then(function () {
+            return { message: "Deleted monster with id " + req.params.monster_id };
+        });
 }
 
 exports.getMonsters = createResponder(getMonsters);
