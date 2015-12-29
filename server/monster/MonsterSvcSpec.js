@@ -4,7 +4,8 @@
 var chai = require('chai');
 var sinon = require('sinon');
 var sinonChai = require('sinon-chai');
-require('sinon-as-promised');
+var Bluebird = require('bluebird');
+require('sinon-as-promised')(Bluebird);
 var expect = chai.expect;
 var _ = require('lodash');
 var mongoose = require('mongoose');
@@ -21,18 +22,18 @@ describe('MonsterSvc', function () {
             {name: 'monster1'},
             {name: 'monster2'}
         ];
-        let stubMonsterFind,
-            jsonSpy,
-            errorSpy,
-            testRes = null;
+        let _find,
+            _json,
+            _error,
+            _res = null;
 
         beforeEach(function () {
-            stubMonsterFind = sinon.stub(Monster, 'find');
-            jsonSpy = sinon.spy();
-            errorSpy = sinon.spy();
-            testRes = {
-                json: jsonSpy,
-                send: errorSpy
+            _find = sinon.stub(Monster, 'find');
+            _json = sinon.spy();
+            _error = sinon.spy();
+            _res = {
+                json: _json,
+                send: _error
             }
         });
 
@@ -41,20 +42,20 @@ describe('MonsterSvc', function () {
         });
 
         it('should correctly call \"res.json\" on the result of \"Monster.find\" when getMonsters(...) is called', function testGetMonsterCall() {
-            stubMonsterFind.resolves(monsterList);
-            MonsterSvc.getMonsters(null, testRes);
-            expect(stubMonsterFind).to.be.calledWith({});
-            return stubMonsterFind().then(function () {
-                expect(jsonSpy).to.be.calledWith(monsterList);
+            _find.resolves(monsterList);
+            MonsterSvc.getMonsters(null, _res);
+            expect(_find).to.be.calledWith({});
+            return _find().then(function () {
+                expect(_json).to.be.calledWith(monsterList);
             });
         });
 
         it('should correctly send an error on \"res.send\" when \"Monster.find\" returns an error', function testGetMonsterError() {
-            stubMonsterFind.rejects('This Failure!');
-            MonsterSvc.getMonsters(null, testRes);
-            expect(stubMonsterFind).to.be.calledWith({});
-            return stubMonsterFind().catch(function () {
-                expect(errorSpy).to.be.calledWith(new Error('This Failure!'));
+            _find.rejects('This Failure!');
+            MonsterSvc.getMonsters(null, _res);
+            expect(_find).to.be.calledWith({});
+            return _find().catch(function () {
+                expect(_error).to.be.calledWith(new Error('This Failure!'));
             });
         });
     });
@@ -68,24 +69,24 @@ describe('MonsterSvc', function () {
             hp: 30
         };
 
-        let stubMonsterFind,
-            jsonSpy,
-            errorSpy,
-            testRes,
-            testReq = null;
+        let _findById,
+            _json,
+            _error,
+            _res,
+            _req = null;
 
         beforeEach(function () {
-            stubMonsterFind = sinon.stub(Monster, 'findById');
-            jsonSpy = sinon.spy();
-            errorSpy = sinon.spy();
-            testReq = {
+            _findById = sinon.stub(Monster, 'findById');
+            _json = sinon.spy();
+            _error = sinon.spy();
+            _req = {
                 params: {
                     monster_id: testMonsterId
                 }
             }
-            testRes = {
-                json: jsonSpy,
-                send: errorSpy
+            _res = {
+                json: _json,
+                send: _error
             }
         });
 
@@ -94,20 +95,20 @@ describe('MonsterSvc', function () {
         });
 
         it('should correctly call \"res.json\" on the result of \"Monster.find\" when getMonsterById(...) is called', function testGetMonsterByIdCall() {
-            stubMonsterFind.resolves(testMonster);
-            MonsterSvc.getMonsterById(testReq, testRes);
-            expect(stubMonsterFind).to.be.calledWith(1);
-            return stubMonsterFind().then(function () {
-                expect(jsonSpy).to.be.calledWith(testMonster);
+            _findById.resolves(testMonster);
+            MonsterSvc.getMonsterById(_req, _res);
+            expect(_findById).to.be.calledWith(1);
+            return _findById().then(function () {
+                expect(_json).to.be.calledWith(testMonster);
             });
         });
 
         it('should correctly send an error on \"res.send\" when \"Monster.find\" returns an error', function testGetMonsterByIdFailure() {
-            stubMonsterFind.rejects('This is an error!');
-            MonsterSvc.getMonsterById(testReq, testRes);
-            expect(stubMonsterFind).to.be.calledWith(1);
-            return stubMonsterFind().catch(function () {
-                expect(errorSpy).to.be.calledWith(new Error('This is an error!'));
+            _findById.rejects('This is an error!');
+            MonsterSvc.getMonsterById(_req, _res);
+            expect(_findById).to.be.calledWith(1);
+            return _findById().catch(function () {
+                expect(_error).to.be.calledWith(new Error('This is an error!'));
             });
         });
     });
@@ -130,18 +131,18 @@ describe('MonsterSvc', function () {
             exp: 100
         };
 
-        let stubMonsterCreate,
-            jsonSpy,
-            errorSpy,
-            testRes = null;
+        let _create,
+            _json,
+            _error,
+            _res = null;
 
         beforeEach(function () {
-            stubMonsterCreate = sinon.stub(Monster, 'create');
-            jsonSpy = sinon.spy();
-            errorSpy = sinon.spy();
-            testRes = {
-                json: jsonSpy,
-                send: errorSpy
+            _create = sinon.stub(Monster, 'create');
+            _json = sinon.spy();
+            _error = sinon.spy();
+            _res = {
+                json: _json,
+                send: _error
             }
         });
 
@@ -150,54 +151,66 @@ describe('MonsterSvc', function () {
         });
 
         it('should correctly call \"res.json\" on the result of \"Monster.create\" when postMonsters(...) is called', function testPostMonsterCall() {
-            stubMonsterCreate.resolves(testMonsterResponse);
-            MonsterSvc.postMonsters(testMonster, testRes);
-            expect(stubMonsterCreate).to.be.calledWith(testMonsterResponse);
-            return stubMonsterCreate().then(function () {
-                expect(jsonSpy).to.be.calledWith(testMonsterResponse);
+            _create.resolves(testMonsterResponse);
+            MonsterSvc.postMonsters(testMonster, _res);
+            expect(_create).to.be.calledWith(testMonsterResponse);
+            return _create().then(function () {
+                expect(_json).to.be.calledWith(testMonsterResponse);
             });
         });
 
         it('should correctly call \"res.send\" when \"Monster.create\" sends an error after postMonsters(...) is called', function testPostMonsterError() {
-            stubMonsterCreate.rejects('Test Failure!');
-            MonsterSvc.postMonsters(testMonster, testRes);
-            expect(stubMonsterCreate).to.be.calledWith(testMonsterResponse);
-            return stubMonsterCreate().catch(function () {
-                expect(errorSpy).to.be.calledWith(new Error('Test Failure!'));
+            _create.rejects('Test Failure!');
+            MonsterSvc.postMonsters(testMonster, _res);
+            expect(_create).to.be.calledWith(testMonsterResponse);
+            return _create().catch(function () {
+                expect(_error).to.be.calledWith(new Error('Test Failure!'));
             });
         });
     });
 
     describe('#updateMonster', function () {
 
-        let testUpdateBody = {
+        let testParams = {
+            monster_id: '8675309'
+        };
+        let testUpdate = {
             name: 'newName',
             hp: 55
         };
-        let testMonsterToUpdate = {
-            name: 'oldName',
+        let testOldMonster = {
+            _id: '8675309',
             hp: 20,
-            save: sinon.spy()
+            name: 'oldName',
+            save: null
         };
-        let stubMonsterFindById,
-            testReq,
-            testRes,
-            jsonSpy,
-            errorSpy = null;
+        let testNewMonster = {
+            _id: '8675309',
+            hp: 55,
+            name: 'newName',
+            save: null
+        };
+        let _findById,
+            _req,
+            _res,
+            _json,
+            _error,
+            _save = null;
 
         beforeEach(function () {
-            stubMonsterFindById = sinon.stub(Monster, 'findById');
-            jsonSpy = sinon.spy();
-            errorSpy = sinon.spy();
-            testReq = {
-                params: {
-                    monster_id: 1
-                },
-                body: testUpdateBody
+            _findById = sinon.stub(Monster, 'findById');
+            _json = sinon.spy();
+            _error = sinon.spy();
+            _save = sinon.spy();
+            testOldMonster.save = _save;
+            testNewMonster.save = _save;
+            _req = {
+                params: testParams,
+                body: testUpdate
             };
-            testRes = {
-                json: jsonSpy,
-                send: errorSpy
+            _res = {
+                json: _json,
+                send: _error
             };
         });
 
@@ -205,17 +218,61 @@ describe('MonsterSvc', function () {
             Monster.findById.restore();
         });
 
-        it('should correctly call \"res.json\" when \"Monster.findById\" when updateMonster(...) is called', function testUpdateMonsterCall() {
-            stubMonsterFindById.resolves(testMonsterToUpdate);
-            MonsterSvc.updateMonster(testReq, testRes);
-            expect(stubMonsterFindById).to.be.calledWith(1);
-            return stubMonsterFindById().then(function () {
-                // expect(testMonsterToUpdate.save).to.be.called();
+        it('should correctly call \"res.json\" when \"Monster.findById\" completes after updateMonster(...) is called', function testUpdateMonsterCall() {
+            _findById.resolves(testOldMonster);
+            MonsterSvc.updateMonster(_req, _res);
+            expect(_findById).to.be.calledWith('8675309');
+            return _findById().then(function () {
+                expect(_save).to.be.called;
+                expect(_json).to.be.calledWith(testNewMonster);
             });
         });
 
         it('should correctly call \"res.send\" when \"Monster.findById\" sends an error after updateMonster(...) is called', function testUpdateMonsterFail() {
-            stubMonsterFindById.rejects('This update failed!');
+            _findById.rejects('This update failed!');
+            MonsterSvc.updateMonster(_req, _res);
+            expect(_findById).to.be.calledWith('8675309');
+            return _findById().catch(function () {
+                expect(_error).to.be.calledWith(new Error('This update failed!'));
+            });
+        });
+    });
+
+    describe('#deleteMonster', function () {
+
+        let testParams = {
+            monster_id: '8675309'
+        };
+        let _findByIdAndRemove,
+            _req,
+            _res,
+            _json,
+            _error = null;
+
+        beforeEach(function () {
+            _findByIdAndRemove = sinon.stub(Monster, 'findByIdAndRemove');
+            _json = sinon.spy();
+            _error = sinon.spy();
+            _res = {
+                json: _json,
+                send: _error
+            };
+            _req = {
+                params: testParams
+            };
+        });
+
+        afterEach(function () {
+            Monster.findByIdAndRemove.restore();
+        });
+
+        it('should correctly call \"res.json\" when \"Monster.findByIdAndRemove\" completes after deleteMonster(...) is called', function testDeleteMonsterCall() {
+            _findByIdAndRemove.resolves();
+            MonsterSvc.deleteMonster(_req, _res);
+            expect(_findByIdAndRemove).to.be.calledWith('8675309');
+            return _findByIdAndRemove().then(function () {
+                expect(_json).to.be.calledWith({message: 'Deleted monster with id 8675309'});
+            });
         });
     });
 });
