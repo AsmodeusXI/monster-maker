@@ -68,7 +68,6 @@ describe('MonsterSvc', function () {
             name: 'Goblin',
             hp: 30
         };
-
         let _findById,
             _json,
             _error,
@@ -123,14 +122,12 @@ describe('MonsterSvc', function () {
                 exp: 100
             }
         };
-
         let testMonsterResponse = {
             name: 'Goblin',
             type: 'Humanoid',
             hp: 20,
             exp: 100
         };
-
         let _create,
             _json,
             _error,
@@ -224,6 +221,7 @@ describe('MonsterSvc', function () {
             expect(_findById).to.be.calledWith('8675309');
             return _findById().then(function () {
                 expect(_save).to.be.called;
+            }).then(function () {
                 expect(_json).to.be.calledWith(testNewMonster);
             });
         });
@@ -232,7 +230,7 @@ describe('MonsterSvc', function () {
             _findById.rejects('This update failed!');
             MonsterSvc.updateMonster(_req, _res);
             expect(_findById).to.be.calledWith('8675309');
-            return _findById().catch(function () {
+            return _findById().catch().catch(function () {
                 expect(_error).to.be.calledWith(new Error('This update failed!'));
             });
         });
@@ -270,8 +268,17 @@ describe('MonsterSvc', function () {
             _findByIdAndRemove.resolves();
             MonsterSvc.deleteMonster(_req, _res);
             expect(_findByIdAndRemove).to.be.calledWith('8675309');
-            return _findByIdAndRemove().then(function () {
+            return _findByIdAndRemove().then().then(function () {
                 expect(_json).to.be.calledWith({message: 'Deleted monster with id 8675309'});
+            });
+        });
+
+        it('should correctly call \"res.send\" when \"Monster.findByIdAndRemove\" errors after deleteMonster(...) is called', function testDeleteMonsterError() {
+            _findByIdAndRemove.rejects('A deleting problem!');
+            MonsterSvc.deleteMonster(_req, _res);
+            expect(_findByIdAndRemove).to.be.calledWith('8675309');
+            return _findByIdAndRemove().catch().catch(function () {
+                expect(_error).to.be.calledWith(new Error('A deleting problem!'));
             });
         });
     });
