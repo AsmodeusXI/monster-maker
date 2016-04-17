@@ -7,7 +7,8 @@ let monsterSchema = new Schema({
     name: String,
     type: String,
     hp: Number,
-    exp: Number
+    exp: Number,
+    userId: String
 });
 
 let Monster = mongoose.model('Monster', monsterSchema);

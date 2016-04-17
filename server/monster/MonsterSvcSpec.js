@@ -1,113 +1,177 @@
 'use strict';
 
 /* EXTERNAL DEPENDENCIES */
-var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
-var Bluebird = require('bluebird');
-require('sinon-as-promised')(Bluebird);
-var expect = chai.expect;
-var _ = require('lodash');
-var mongoose = require('mongoose');
+const chai = require('chai');
+const sinon = require('sinon');
+const sinonChai = require('sinon-chai');
+require('sinon-as-promised');
+const expect = chai.expect;
+const _ = require('lodash');
+const mongoose = require('mongoose');
 chai.use(sinonChai);
 
 /* INTERNAL DEPENDENCIES */
-var MonsterSvc = require('./MonsterSvc');
-var Monster = require('./Monster').Monster;
+const MonsterSvc = require('./MonsterSvc');
+const RealmshaperUserSvc = require('../realmshaper-user/RealmshaperUserSvc')
+const Monster = require('./Monster').Monster;
 
 describe('MonsterSvc', function () {
+
+    let _find,
+        _findOneAndRemove,
+        _create,
+        _json,
+        _send,
+        _req,
+        _res,
+        _save,
+        _validateUser = null;
+
+    let testUser = {
+        _id: 'test-user-id',
+        local: {
+            token: 'test-token'
+        }
+    };
+
+    beforeEach(function () {
+        _validateUser = sinon.stub(RealmshaperUserSvc, 'validateUser');
+        _json = sinon.spy();
+        _send = sinon.spy();
+        _res = {
+            json: _json,
+            send: _send
+        };
+    });
+
+    afterEach(function () {
+        RealmshaperUserSvc.validateUser.restore();
+    });
+
     describe('#getMonsters', function () {
 
         let monsterList = [
-            {name: 'monster1'},
-            {name: 'monster2'}
+            {name: 'monster1', userId: 'test-user-id'},
+            {name: 'monster2', userId: 'not-test-id'}
         ];
-        let _find,
-            _json,
-            _error,
-            _res = null;
+        let testUserMonsterList = [
+            {name: 'monster1', userId: 'test-user-id'}
+        ];
 
         beforeEach(function () {
             _find = sinon.stub(Monster, 'find');
-            _json = sinon.spy();
-            _error = sinon.spy();
-            _res = {
-                json: _json,
-                send: _error
-            }
+            _req = {
+                get: function (headerName) {
+                    if(headerName === 'rs-user-token') {
+                        return 'test-token';
+                    } else {
+                        return null;
+                    }
+                }
+            };
         });
 
         afterEach(function () {
             Monster.find.restore();
         });
 
-        it('should correctly call \"res.json\" on the result of \"Monster.find\" when getMonsters(...) is called', function testGetMonsterCall() {
-            _find.resolves(monsterList);
-            MonsterSvc.getMonsters(null, _res);
-            expect(_find).to.be.calledWith({});
-            return _find().then(function () {
-                expect(_json).to.be.calledWith(monsterList);
+        it('should validate the user and only return monsters related to that user', function testGetMonsterCall() {
+            _validateUser.withArgs('test-token').resolves(testUser);
+            _find.withArgs({'userId': 'test-user-id'}).resolves(testUserMonsterList);
+            MonsterSvc.getMonsters(_req, _res);
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').then(function () {
+                expect(_find).to.be.calledWith({'userId': 'test-user-id'});
+                return _find({'userId': 'test-user-id'}).then(function () {
+                    expect(_json).to.be.calledWith(testUserMonsterList);
+                });
             });
         });
 
-        it('should correctly send an error on \"res.send\" when \"Monster.find\" returns an error', function testGetMonsterError() {
-            _find.rejects('This Failure!');
-            MonsterSvc.getMonsters(null, _res);
-            expect(_find).to.be.calledWith({});
-            return _find().catch(function () {
-                expect(_error).to.be.calledWith(new Error('This Failure!'));
+        it('should prompt a login when the user fails validation', function testValidationFailure() {
+            _validateUser.withArgs('test-token').rejects('Validation Failure!');
+            MonsterSvc.getMonsters(_req, _res);
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').catch(function () {
+                expect(_send).to.be.calledWith(new Error('Validation Failure!'));
+            });
+        });
+
+        it('should fail when no Monsters can be found for the given userId', function testGetMonsterError() {
+            _validateUser.withArgs('test-token').resolves(testUser);
+            _find.withArgs({'userId': 'test-user-id'}).rejects('This Failure!');
+            MonsterSvc.getMonsters(_req, _res);
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').then(function () {
+                expect(_find).to.be.calledWith({'userId': 'test-user-id'});
+                return _find({'userId': 'test-user-id'}).catch(function () {
+                    expect(_send).to.be.calledWith(new Error('This Failure!'));
+                });
             });
         });
     });
 
     describe('#getMonsterById', function () {
 
-        let testMonsterId = 1;
         let testMonster = {
-            _id: 1,
+            _id: '1',
             name: 'Goblin',
-            hp: 30
+            hp: 30,
+            userId: 'test-user-id'
         };
-        let _findById,
-            _json,
-            _error,
-            _res,
-            _req = null;
 
         beforeEach(function () {
-            _findById = sinon.stub(Monster, 'findById');
-            _json = sinon.spy();
-            _error = sinon.spy();
+            _find = sinon.stub(Monster, 'find');
             _req = {
                 params: {
-                    monster_id: testMonsterId
+                    monster_id: testMonster._id
+                },
+                get: function (headerName) {
+                    if(headerName === 'rs-user-token') {
+                        return 'test-token';
+                    } else {
+                        return null;
+                    }
                 }
-            }
-            _res = {
-                json: _json,
-                send: _error
-            }
+            };
         });
 
         afterEach(function () {
-            Monster.findById.restore();
+            Monster.find.restore();
         });
 
-        it('should correctly call \"res.json\" on the result of \"Monster.find\" when getMonsterById(...) is called', function testGetMonsterByIdCall() {
-            _findById.resolves(testMonster);
+        it('should validate the user and return a monster with a specific id if that user owns it', function testGetMonsterByIdCall() {
+            _find.withArgs({_id: '1', userId: 'test-user-id'}).resolves(testMonster);
+            _validateUser.withArgs('test-token').resolves(testUser);
             MonsterSvc.getMonsterById(_req, _res);
-            expect(_findById).to.be.calledWith(1);
-            return _findById().then(function () {
-                expect(_json).to.be.calledWith(testMonster);
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').then(function () {
+                expect(_find).to.be.calledWith({_id: '1', userId: 'test-user-id'});
+                return _find({_id: '1', userId: 'test-user-id'}).then(function () {
+                    expect(_json).to.be.calledWith(testMonster);
+                });
             });
         });
 
-        it('should correctly send an error on \"res.send\" when \"Monster.find\" returns an error', function testGetMonsterByIdFailure() {
-            _findById.rejects('This is an error!');
+        it('should error correctly if user validation fails', function testGetMonsterByIdValidationFailure() {
+            _validateUser.withArgs('test-token').rejects('Validation Failure!');
             MonsterSvc.getMonsterById(_req, _res);
-            expect(_findById).to.be.calledWith(1);
-            return _findById().catch(function () {
-                expect(_error).to.be.calledWith(new Error('This is an error!'));
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').catch(function () {
+                expect(_send).to.be.calledWith(new Error('Validation Failure!'));
+            });
+        });
+
+        it('should error correctly if the user does not possess the desired monster', function testGetMonsterByIdFailure() {
+            _find.withArgs({_id: '1', userId: 'test-user-id'}).rejects('This is an error!');
+            _validateUser.withArgs('test-token').resolves(testUser);
+            MonsterSvc.getMonsterById(_req, _res);
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').then(function () {
+                expect(_find).to.be.calledWith({_id: '1', userId: 'test-user-id'});
+                return _find({_id: '1', userId: 'test-user-id'}).catch(function () {
+                    expect(_send).to.be.calledWith(new Error('This is an error!'));
+                });
             });
         });
     });
@@ -115,53 +179,70 @@ describe('MonsterSvc', function () {
     describe('#postMonster', function () {
 
         let testMonster = {
-            body: {
-                name: 'Goblin',
-                type: 'Humanoid',
-                hp: 20,
-                exp: 100
-            }
-        };
-        let testMonsterResponse = {
             name: 'Goblin',
             type: 'Humanoid',
             hp: 20,
             exp: 100
         };
-        let _create,
-            _json,
-            _error,
-            _res = null;
+        let testMonsterResponse = {
+            name: 'Goblin',
+            type: 'Humanoid',
+            hp: 20,
+            exp: 100,
+            userId: 'test-user-id'
+        };
 
         beforeEach(function () {
             _create = sinon.stub(Monster, 'create');
-            _json = sinon.spy();
-            _error = sinon.spy();
-            _res = {
-                json: _json,
-                send: _error
-            }
+            _req = {
+                get: function (headerName) {
+                    if(headerName === 'rs-user-token') {
+                        return 'test-token';
+                    } else {
+                        return null;
+                    }
+                },
+                body: testMonster
+            };
         });
 
         afterEach(function () {
             Monster.create.restore();
         });
 
-        it('should correctly call \"res.json\" on the result of \"Monster.create\" when postMonsters(...) is called', function testPostMonsterCall() {
-            _create.resolves(testMonsterResponse);
-            MonsterSvc.postMonsters(testMonster, _res);
-            expect(_create).to.be.calledWith(testMonsterResponse);
-            return _create().then(function () {
-                expect(_json).to.be.calledWith(testMonsterResponse);
+        it('should add a validated user id to the test monster', function testPostMonsterCall() {
+            _validateUser.withArgs('test-token').resolves(testUser);
+            _create.withArgs(testMonsterResponse).resolves(testMonsterResponse);
+            MonsterSvc.postMonsters(_req, _res);
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').then(function () {
+                expect(_create).to.be.calledWith(testMonsterResponse);
+                return _create(testMonsterResponse).then(function (data) {
+                    expect(data.userId).to.equal(testMonsterResponse.userId);
+                    expect(_json).to.be.calledWith(testMonsterResponse);
+                });
             });
         });
 
-        it('should correctly call \"res.send\" when \"Monster.create\" sends an error after postMonsters(...) is called', function testPostMonsterError() {
-            _create.rejects('Test Failure!');
-            MonsterSvc.postMonsters(testMonster, _res);
-            expect(_create).to.be.calledWith(testMonsterResponse);
-            return _create().catch(function () {
-                expect(_error).to.be.calledWith(new Error('Test Failure!'));
+        it('should correctly fail if there is a validation error', function testPostMonsterValidationError() {
+            _validateUser.withArgs('test-token').rejects('Validation Error!');
+            MonsterSvc.postMonsters(_req, _res);
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').catch(function () {
+                expect(_send).to.be.calledWith(new Error('Validation Error!'));
+            });
+        });
+
+        it('should correctly fail if there is a posting error', function testPostMonsterCreationError() {
+            _validateUser.withArgs('test-token').resolves(testUser);
+            _create.withArgs(testMonsterResponse).rejects('Test Failure!');
+            MonsterSvc.postMonsters(_req, _res);
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').then(function () {
+                expect(_create).to.be.calledWith(testMonsterResponse);
+                return _create(testMonsterResponse).catch(function () {
+                    expect(_send).to.be.calledWith(new Error('Test Failure!'));
+                });
             });
         });
     });
@@ -179,59 +260,76 @@ describe('MonsterSvc', function () {
             _id: '8675309',
             hp: 20,
             name: 'oldName',
-            save: null
+            save: null,
+            userId: 'test-user-id'
         };
         let testNewMonster = {
             _id: '8675309',
             hp: 55,
             name: 'newName',
-            save: null
+            save: null,
+            userId: 'test-user-id'
         };
-        let _findById,
-            _req,
-            _res,
-            _json,
-            _error,
-            _save = null;
 
         beforeEach(function () {
-            _findById = sinon.stub(Monster, 'findById');
-            _json = sinon.spy();
-            _error = sinon.spy();
+            _find = sinon.stub(Monster, 'find');
             _save = sinon.spy();
             testOldMonster.save = _save;
             testNewMonster.save = _save;
             _req = {
                 params: testParams,
-                body: testUpdate
-            };
-            _res = {
-                json: _json,
-                send: _error
+                body: testUpdate,
+                get: function (headerName) {
+                    if(headerName === 'rs-user-token') {
+                        return 'test-token';
+                    } else {
+                        return null;
+                    }
+                }
             };
         });
 
         afterEach(function () {
-            Monster.findById.restore();
+            Monster.find.restore();
         });
 
-        it('should correctly call \"res.json\" when \"Monster.findById\" completes after updateMonster(...) is called', function testUpdateMonsterCall() {
-            _findById.resolves(testOldMonster);
+        it('should only update a monster created by the given user', function testUpdateMonsterCall() {
+            _find.withArgs({_id: '8675309', userId: 'test-user-id'}).resolves(testOldMonster);
+            _validateUser.withArgs('test-token').resolves(testUser);
             MonsterSvc.updateMonster(_req, _res);
-            expect(_findById).to.be.calledWith('8675309');
-            return _findById().then(function () {
-                expect(_save).to.be.called;
-            }).then(function () {
-                expect(_json).to.be.calledWith(testNewMonster);
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').then(function () {
+                expect(_find).to.be.calledWith({_id: '8675309', userId: 'test-user-id'});
+                return _find({_id: '8675309', userId: 'test-user-id'})
+                    .then(function () {
+                        expect(_save).to.be.called;
+                    })
+                    .then(function () {
+                        expect(_json).to.be.calledWith(testNewMonster);
+                    });
             });
         });
 
-        it('should correctly call \"res.send\" when \"Monster.findById\" sends an error after updateMonster(...) is called', function testUpdateMonsterFail() {
-            _findById.rejects('This update failed!');
+        it('should provide an accurate validation error', function testUpdateValidationFail() {
+            _validateUser.withArgs('test-token').rejects('Validation Error!');
             MonsterSvc.updateMonster(_req, _res);
-            expect(_findById).to.be.calledWith('8675309');
-            return _findById().catch().catch(function () {
-                expect(_error).to.be.calledWith(new Error('This update failed!'));
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').catch(function () {
+                expect(_send).to.be.calledWith(new Error('Validation Error!'));
+            });
+        });
+
+        it('should provide an accurate error when it cannot find a monster', function testUpdateMonsterFail() {
+            _find.withArgs({_id: '8675309', userId: 'test-user-id'}).rejects('This update failed!');
+            _validateUser.withArgs('test-token').resolves(testUser);
+            MonsterSvc.updateMonster(_req, _res);
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').then(function () {
+                expect(_find).to.be.calledWith({_id: '8675309', userId: 'test-user-id'});
+                return _find({_id: '8675309', userId: 'test-user-id'})
+                    .catch().catch(function () {
+                        expect(_send).to.be.calledWith(new Error('This update failed!'));
+                    });
             });
         });
     });
@@ -241,44 +339,65 @@ describe('MonsterSvc', function () {
         let testParams = {
             monster_id: '8675309'
         };
-        let _findByIdAndRemove,
-            _req,
-            _res,
-            _json,
-            _error = null;
+        let testMonsterToDelete = {
+            _id: '8675309',
+            name: 'Goblin',
+            type: 'Humanoid',
+            hp: 20,
+            exp: 100,
+            userId: 'test-user-id'
+        };
 
         beforeEach(function () {
-            _findByIdAndRemove = sinon.stub(Monster, 'findByIdAndRemove');
-            _json = sinon.spy();
-            _error = sinon.spy();
-            _res = {
-                json: _json,
-                send: _error
-            };
+            _findOneAndRemove = sinon.stub(Monster, 'findOneAndRemove');
             _req = {
-                params: testParams
+                params: testParams,
+                get: function (headerName) {
+                    if(headerName === 'rs-user-token') {
+                        return 'test-token';
+                    } else {
+                        return null;
+                    }
+                }
             };
         });
 
         afterEach(function () {
-            Monster.findByIdAndRemove.restore();
+            Monster.findOneAndRemove.restore();
         });
 
-        it('should correctly call \"res.json\" when \"Monster.findByIdAndRemove\" completes after deleteMonster(...) is called', function testDeleteMonsterCall() {
-            _findByIdAndRemove.resolves();
+        it('should only ever delete a monster owned by the given user', function testDeleteMonsterCall() {
+            _validateUser.withArgs('test-token').resolves(testUser);
+            _findOneAndRemove.withArgs({_id: '8675309', userId: 'test-user-id'}).resolves();
             MonsterSvc.deleteMonster(_req, _res);
-            expect(_findByIdAndRemove).to.be.calledWith('8675309');
-            return _findByIdAndRemove().then().then(function () {
-                expect(_json).to.be.calledWith({message: 'Deleted monster with id 8675309'});
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').then(function () {
+                expect(_findOneAndRemove).to.be.calledWith({_id: '8675309', userId: 'test-user-id'});
+                return _findOneAndRemove({_id: '8675309', userId: 'test-user-id'}).then().then(function () {
+                    expect(_json).to.be.calledWith({message: 'Deleted monster with id 8675309'});
+                });
             });
         });
 
-        it('should correctly call \"res.send\" when \"Monster.findByIdAndRemove\" errors after deleteMonster(...) is called', function testDeleteMonsterError() {
-            _findByIdAndRemove.rejects('A deleting problem!');
+        it('should fail accurately when there is a validation problem', function testValidateInDeleteError() {
+            _validateUser.withArgs('test-token').rejects('Validation Error!');
             MonsterSvc.deleteMonster(_req, _res);
-            expect(_findByIdAndRemove).to.be.calledWith('8675309');
-            return _findByIdAndRemove().catch().catch(function () {
-                expect(_error).to.be.calledWith(new Error('A deleting problem!'));
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').catch(function () {
+                expect(_send).to.be.calledWith(new Error('Validation Error!'));
+            });
+        })
+
+        it('should fail appropriately when there is a deleting problem', function testDeleteMonsterError() {
+            _validateUser.withArgs('test-token').resolves(testUser);
+            _findOneAndRemove.withArgs({_id: '8675309', userId: 'test-user-id'}).rejects('A deleting problem!');
+            MonsterSvc.deleteMonster(_req, _res);
+            expect(_validateUser).to.be.calledWith('test-token');
+            return _validateUser('test-token').then(function () {
+                expect(_findOneAndRemove).to.be.calledWith({_id: '8675309', userId: 'test-user-id'});
+                return _findOneAndRemove({_id: '8675309', userId: 'test-user-id'}).catch().catch(function () {
+                    expect(_send).to.be.calledWith(new Error('A deleting problem!'));
+                });
             });
         });
     });

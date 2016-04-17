@@ -1,11 +1,13 @@
 {
     "local": {
         "dbUrl": "mongodb://localhost:27017",
+        "rsUrl": "http://localhost:8081/api",
         "port": 8080,
         "message": "I hope you're testing locally!"
     },
     "production": {
         "dbUrl": "mongodb://monsterAdmin:Sp0o0o0okY@ec2-52-32-157-223.us-west-2.compute.amazonaws.com:27017/monster",
+        "rsUrl": "http://ec2-52-32-157-223.us-west-2.compute.amazonaws.com:8081/api",
         "port": 8080,
         "message": "Say hello world! It's Monster Maker PROD! This is proof that this works!"
     }
