@@ -1,13 +1,29 @@
 'use strict';
 
 const Monster = require('./Monster').Monster;
+const RealmshaperUserSvc = require('../realmshaper-user/RealmshaperUserSvc');
 const _ = require('lodash');
 
-function createResponder(promiseResponseFromRequest) {
+module.exports = {
+    getMonsters: validateUserAndRespond(getMonsters),
+    getMonsterById: validateUserAndRespond(getMonsterById),
+    postMonsters: validateUserAndRespond(addMonster),
+    updateMonster: validateUserAndRespond(updateMonster),
+    deleteMonster: validateUserAndRespond(removeMonster)
+}
+
+function validateUserAndRespond(promiseResponseFromRequest) {
     return function(req, res) {
-        return promiseResponseFromRequest(req)
-            .then(function (data) {
-                res.json(data);
+        let rsUserToken = req.get('rs-user-token');
+        return RealmshaperUserSvc.validateUser(rsUserToken)
+            .then(function (user) {
+                return promiseResponseFromRequest(req, user)
+                    .then(function (data) {
+                        res.json(data);
+                    })
+                    .catch(function (err) {
+                        res.send(err);
+                    });
             })
             .catch(function (err) {
                 res.send(err);
@@ -15,20 +31,22 @@ function createResponder(promiseResponseFromRequest) {
     };
 }
 
-function getMonsters() {
-    return Monster.find({});
+function getMonsters(req, user) {
+    return Monster.find({userId: user._id});
 }
 
-function getMonsterById(req) {
-    return Monster.findById(req.params.monster_id);
+function getMonsterById(req, user) {
+    return Monster.find({'_id': req.params.monster_id, 'userId': user._id});
 }
 
-function addMonster(req) {
-    return Monster.create(req.body);
+function addMonster(req, user) {
+    let newMonster = req.body;
+    newMonster['userId'] = user._id;
+    return Monster.create(newMonster);
 }
 
-function updateMonster(req) {
-    return Monster.findById(req.params.monster_id)
+function updateMonster(req, user) {
+    return Monster.find({'_id': req.params.monster_id, 'userId': user._id})
         .then(function (monster) {
             _.assign(monster, req.body);
             monster.save();
@@ -36,15 +54,9 @@ function updateMonster(req) {
         });
 }
 
-function removeMonster(req) {
-    return Monster.findByIdAndRemove(req.params.monster_id)
+function removeMonster(req, user) {
+    return Monster.findOneAndRemove({'_id': req.params.monster_id, 'userId': user._id})
         .then(function () {
             return { message: "Deleted monster with id " + req.params.monster_id };
         });
 }
-
-exports.getMonsters = createResponder(getMonsters);
-exports.getMonsterById = createResponder(getMonsterById);
-exports.postMonsters = createResponder(addMonster);
-exports.updateMonster = createResponder(updateMonster);
-exports.deleteMonster = createResponder(removeMonster);

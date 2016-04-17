@@ -1,5 +1,7 @@
 'use strict';
 
+require('babel-polyfill');
+
 module.exports = function() {
     // Express Setup
     const express = require('express');
@@ -13,7 +15,6 @@ module.exports = function() {
     // MongoDB Setup
     var config = require('./config/default')[process.env.NODE_ENV || 'local'];
     var mongoose = require('mongoose');
-    mongoose.Promise = require('bluebird');
     mongoose.connect(config.dbUrl);
 
     // File Location Setup
