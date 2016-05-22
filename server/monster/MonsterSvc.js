@@ -46,7 +46,7 @@ function addMonster(req, user) {
 }
 
 function updateMonster(req, user) {
-    return Monster.find({'_id': req.params.monster_id, 'userId': user._id})
+    return Monster.findOne({'_id': req.params.monster_id, 'userId': user._id})
         .then(function (monster) {
             _.assign(monster, req.body);
             monster.save();
