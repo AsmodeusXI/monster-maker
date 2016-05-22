@@ -18,6 +18,7 @@ const Monster = require('./Monster').Monster;
 describe('MonsterSvc', function () {
 
     let _find,
+        _findOne,
         _findOneAndRemove,
         _create,
         _json,
@@ -272,7 +273,7 @@ describe('MonsterSvc', function () {
         };
 
         beforeEach(function () {
-            _find = sinon.stub(Monster, 'find');
+            _findOne = sinon.stub(Monster, 'findOne');
             _save = sinon.spy();
             testOldMonster.save = _save;
             testNewMonster.save = _save;
@@ -290,17 +291,17 @@ describe('MonsterSvc', function () {
         });
 
         afterEach(function () {
-            Monster.find.restore();
+            Monster.findOne.restore();
         });
 
         it('should only update a monster created by the given user', function testUpdateMonsterCall() {
-            _find.withArgs({_id: '8675309', userId: 'test-user-id'}).resolves(testOldMonster);
+            _findOne.withArgs({_id: '8675309', userId: 'test-user-id'}).resolves(testOldMonster);
             _validateUser.withArgs('test-token').resolves(testUser);
             MonsterSvc.updateMonster(_req, _res);
             expect(_validateUser).to.be.calledWith('test-token');
             return _validateUser('test-token').then(function () {
-                expect(_find).to.be.calledWith({_id: '8675309', userId: 'test-user-id'});
-                return _find({_id: '8675309', userId: 'test-user-id'})
+                expect(_findOne).to.be.calledWith({_id: '8675309', userId: 'test-user-id'});
+                return _findOne({_id: '8675309', userId: 'test-user-id'})
                     .then(function () {
                         expect(_save).to.be.called;
                     })
@@ -320,13 +321,13 @@ describe('MonsterSvc', function () {
         });
 
         it('should provide an accurate error when it cannot find a monster', function testUpdateMonsterFail() {
-            _find.withArgs({_id: '8675309', userId: 'test-user-id'}).rejects('This update failed!');
+            _findOne.withArgs({_id: '8675309', userId: 'test-user-id'}).rejects('This update failed!');
             _validateUser.withArgs('test-token').resolves(testUser);
             MonsterSvc.updateMonster(_req, _res);
             expect(_validateUser).to.be.calledWith('test-token');
             return _validateUser('test-token').then(function () {
-                expect(_find).to.be.calledWith({_id: '8675309', userId: 'test-user-id'});
-                return _find({_id: '8675309', userId: 'test-user-id'})
+                expect(_findOne).to.be.calledWith({_id: '8675309', userId: 'test-user-id'});
+                return _findOne({_id: '8675309', userId: 'test-user-id'})
                     .catch().catch(function () {
                         expect(_send).to.be.calledWith(new Error('This update failed!'));
                     });
