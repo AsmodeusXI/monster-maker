@@ -12,7 +12,8 @@ let monsterSchema = new Schema({
     dpr: Number,
     atk: Number,
     sdc: Number,
-    userId: String
+    userId: String,
+    cr: String
 });
 
 let Monster = mongoose.model('Monster', monsterSchema);
