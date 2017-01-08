@@ -10,6 +10,7 @@ let monsterSchema = new Schema({
     exp: Number,
     ac: Number,
     dpr: Number,
+    dprStr: String,
     atk: Number,
     sdc: Number,
     userId: String,
