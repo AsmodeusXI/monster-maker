@@ -1,0 +1,8 @@
+{
+  "local": {
+    "dbUrl": "mongodb://localhost:27017",
+    "rsUrl": "http://localhost:8081/api",
+    "port": 8080,
+    "message": "The local instance."
+  }
+}

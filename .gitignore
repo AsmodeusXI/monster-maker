@@ -4,4 +4,3 @@ dist
 maps
 *.pem
 .DS_Store
-config
