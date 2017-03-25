@@ -31,4 +31,5 @@ module.exports = function() {
     // App startup
     app.listen(config.port);
 }
+
 module.exports();
