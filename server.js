@@ -13,8 +13,8 @@ module.exports = function() {
     app.use(cors());
 
     // MongoDB Setup
-    var config = null
-    if process.env.NODE_ENV === 'production' {
+    var config = null;
+    if(process.env.NODE_ENV === 'production') {
       config = require('./../monster-maker/production')[process.env.NODE_ENV];
     } else {
       config = require('./config/default')[process.env.NODE_ENV || 'local'];
