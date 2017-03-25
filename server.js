@@ -15,7 +15,7 @@ module.exports = function() {
     // MongoDB Setup
     var config = null;
     if(process.env.NODE_ENV === 'production') {
-      config = require('./../monster-maker/production')[process.env.NODE_ENV];
+      config = require('/home/bitnami/apps/config/monster-maker/production')[process.env.NODE_ENV];
     } else {
       config = require('./config/default')[process.env.NODE_ENV || 'local'];
     }
